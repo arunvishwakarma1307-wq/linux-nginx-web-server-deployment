@@ -1,14 +1,14 @@
 # Linux Nginx Web Server Deployment & Administration
 
-A hands-on Linux System Administration project built using Ubuntu Linux (WSL) and Nginx. The project demonstrates web server installation, service management, firewall configuration, custom web page deployment, HTTP verification, HTTPS/TLS configuration, and real-time access log monitoring.
+A hands-on Linux System Administration project built using Ubuntu Linux (WSL) and Nginx. The project demonstrates web server installation, service management, firewall configuration, custom web page deployment, HTTP verification, HTTPS/TLS configuration, Nginx log management, log rotation, Bash-based RAM monitoring, and Git/GitHub version control.
 
 ## 📌 Project Overview
 
-The goal of this project is to build and administer a Linux-based Nginx web server and progressively improve its configuration and security.
+The goal of this project is to build and administer a Linux-based Nginx web server and progressively improve its configuration, security, monitoring, and log management capabilities.
 
 Project workflow:
 
-Ubuntu Linux → Install Nginx → Manage Nginx Service → Configure UFW Firewall → Deploy Custom HTML Page → Test HTTP → Monitor Logs → Configure HTTPS/TLS → Enforce HTTP-to-HTTPS Redirect
+Ubuntu Linux → Install Nginx → Manage Nginx Service → Configure UFW Firewall → Deploy Custom HTML Page → Test HTTP → Monitor Access Logs → Configure HTTPS/TLS → Enforce HTTP-to-HTTPS Redirect → Configure Log Rotation → Monitor RAM Usage → Track System Status
 
 ## 🛠️ Technologies & Tools
 
@@ -18,100 +18,112 @@ Ubuntu Linux → Install Nginx → Manage Nginx Service → Configure UFW Firewa
 - OpenSSL
 - systemd
 - UFW Firewall
+- logrotate
+- Bash / Shell Scripting
 - HTML5
 - Git
 - GitHub
 - Linux Command Line
 
-## ✅ Phase 1 — Web Server Deployment
+---
 
-### Nginx Installation
+# ✅ Phase 1 — Web Server Deployment
+
+## Nginx Installation
 
 Updated Ubuntu package information:
 
-sudo apt update
+    sudo apt update
 
 Installed Nginx:
 
-sudo apt install nginx -y
+    sudo apt install nginx -y
 
 Started the Nginx service:
 
-sudo systemctl start nginx
+    sudo systemctl start nginx
 
 Verified the service status:
 
-sudo systemctl status nginx
+    sudo systemctl status nginx
 
 Nginx was verified as active and running.
 
-### Firewall Configuration
+## Firewall Configuration
 
 Allowed Nginx web traffic through UFW:
 
-sudo ufw allow 'Nginx Full'
+    sudo ufw allow 'Nginx Full'
 
 Enabled UFW:
 
-sudo ufw enable
+    sudo ufw enable
 
 Verified firewall configuration:
 
-sudo ufw status verbose
+    sudo ufw status verbose
 
 The Nginx Full profile allows firewall traffic for HTTP (80) and HTTPS (443).
 
 Note: During Phase 1, HTTPS/TLS itself was not configured.
 
-### Custom Web Page Deployment
+## Custom Web Page Deployment
 
 Removed the default Nginx placeholder page:
 
-sudo rm -f /var/www/html/index.nginx-debian.html
+    sudo rm -f /var/www/html/index.nginx-debian.html
 
 Deployed a custom responsive HTML5 homepage at:
 
-/var/www/html/index.html
+    /var/www/html/index.html
 
 HTTP access was verified through:
 
-http://localhost
+    http://localhost
 
-### Nginx Access Log Monitoring
+The custom HTML5 dashboard was successfully displayed through the Nginx web server.
+
+## Nginx Access Log Monitoring
 
 Monitored Nginx access logs in real time:
 
-sudo tail -f /var/log/nginx/access.log
+    sudo tail -f /var/log/nginx/access.log
 
 Successful browser requests were observed with HTTP status:
 
-200 OK
+    200 OK
 
 This verified that requests were reaching the Nginx web server successfully.
 
-## 🔐 Phase 2 — Security Hardening & HTTPS
+---
+
+# 🔐 Phase 2 — Security Hardening & HTTPS
 
 Phase 2 focused on introducing HTTPS/TLS to the existing Nginx web server and enforcing encrypted browser access.
 
-### 1. Self-Signed SSL/TLS Certificate Generation
+## 1. Self-Signed SSL/TLS Certificate Generation
 
 Generated a 2048-bit RSA private key and a 365-day self-signed certificate using OpenSSL:
 
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt -subj "/C=IN/ST=Gujarat/L=Ahmedabad/O=Enterprise/OU=IT/CN=localhost"
+    sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt -subj "/C=IN/ST=Gujarat/L=Ahmedabad/O=Enterprise/OU=IT/CN=localhost"
 
 Certificate files were stored at:
 
 Private Key:
-/etc/ssl/private/nginx-selfsigned.key
+
+    /etc/ssl/private/nginx-selfsigned.key
 
 Certificate:
-/etc/ssl/certs/nginx-selfsigned.crt
 
-### 2. Nginx HTTPS Configuration
+    /etc/ssl/certs/nginx-selfsigned.crt
+
+The private key and certificate were used locally for the Nginx HTTPS configuration.
+
+## 2. Nginx HTTPS Configuration
 
 Updated the Nginx default virtual host configuration:
 
-/etc/nginx/sites-available/default
+    /etc/nginx/sites-available/default
 
 Configured two server blocks:
 
@@ -120,38 +132,38 @@ Configured two server blocks:
 
 HTTP traffic was configured to redirect permanently to HTTPS using:
 
-return 301
+    return 301
 
 HTTPS was configured using the generated certificate and private key paths.
 
-### 3. Nginx Configuration Verification
+## 3. Nginx Configuration Verification
 
 Before restarting Nginx, the configuration syntax was tested:
 
-sudo nginx -t
+    sudo nginx -t
 
 Verification result:
 
-syntax is ok
-test is successful
+    syntax is ok
+    test is successful
 
-This confirmed that the modified Nginx configuration passed the Nginx syntax validation.
+This confirmed that the modified Nginx configuration passed Nginx syntax validation.
 
-### 4. Nginx Service and Firewall Reload
+## 4. Nginx Service and Firewall Reload
 
 Restarted Nginx:
 
-sudo systemctl restart nginx
+    sudo systemctl restart nginx
 
 Reloaded UFW:
 
-sudo ufw reload
+    sudo ufw reload
 
-### 5. HTTPS Verification
+## 5. HTTPS Verification
 
 The HTTPS configuration was tested through a browser using:
 
-https://localhost
+    https://localhost
 
 Because the certificate is self-signed, the browser displayed its normal certificate warning.
 
@@ -178,9 +190,116 @@ The current HTTPS implementation uses a self-signed certificate for local develo
 
 It is not a publicly trusted CA-issued certificate and should not be described as production-grade public HTTPS.
 
-## 📚 Skills Practiced
+The private key and certificate are kept outside the GitHub project repository.
 
-### Linux Administration
+---
+
+# 📊 Phase 3 — Automated Monitoring & Log Optimization Lifecycle
+
+Phase 3 focused on Nginx log lifecycle management and Bash-based system resource monitoring using native Linux tools.
+
+## 1. Nginx Log Rotation Configuration
+
+Customized the Nginx logrotate configuration:
+
+    /etc/logrotate.d/nginx
+
+The configuration includes:
+
+- Daily log rotation
+- Retention of 7 rotated logs
+- gzip compression of rotated logs
+- Delayed compression using delaycompress
+- Skipping of empty log files
+- Creation of rotated logs with defined ownership and permissions
+- Shared post-rotation script execution
+- Nginx log file reopening through the USR1 signal after rotation
+
+The configured log path is:
+
+    /var/log/nginx/*.log
+
+The configuration was validated using logrotate debug/dry-run mode:
+
+    sudo logrotate -d /etc/logrotate.d/nginx
+
+The validation confirmed that the Nginx access and error logs were correctly recognized by the rotation configuration.
+
+During validation, logrotate reported the current logs did not require another rotation because they had already been rotated. This was expected behavior and did not indicate a configuration error.
+
+A project copy of the configuration is maintained as:
+
+    nginx_logrotate.conf
+
+## 2. Bash RAM Monitoring Script
+
+Created a Bash-based RAM monitoring script:
+
+    server_monitor.sh
+
+The script:
+
+- Defines an 80% RAM usage threshold
+- Reads total and used RAM using Linux command-line utilities
+- Calculates current RAM usage percentage
+- Compares the calculated usage against the configured threshold
+- Generates an alert log entry when RAM usage exceeds 80%
+- Records a healthy status when RAM usage does not exceed the threshold
+- Adds a timestamp to each monitoring record
+- Stores monitoring results in:
+
+    server_alerts.log
+
+The threshold logic uses a greater-than comparison, meaning an alert is generated only when RAM usage exceeds 80%.
+
+## 3. Script Execution & Verification
+
+Made the monitoring script executable:
+
+    chmod +x server_monitor.sh
+
+Executed the monitoring script manually:
+
+    ./server_monitor.sh
+
+Reviewed the generated monitoring record:
+
+    cat server_alerts.log
+
+During verification, the script successfully recorded:
+
+    [🟢 HEALTHY] 2026-09-22 15:03:43_UTC - System Optimized. Live RAM Usage is at 12%
+
+This confirmed that the script successfully collected the current RAM information, calculated the usage percentage, evaluated the threshold condition, and recorded the resulting status.
+
+The monitoring script currently runs through manual invocation. Continuous or scheduled execution using Cron or a systemd timer has not yet been implemented.
+
+## 4. Phase 3 Skills Practiced
+
+- Linux System Administration
+- Linux Log Management
+- Nginx Log Management
+- logrotate
+- Log Rotation
+- Log Retention
+- Log Compression
+- Bash Scripting
+- Shell Scripting
+- RAM Monitoring
+- Resource Monitoring
+- Threshold-Based Monitoring
+- Linux Command-Line Tools
+- Basic System Monitoring
+- Configuration Validation
+- Linux File Permissions
+- Git
+- GitHub
+
+---
+
+# 📚 Skills Practiced
+
+## Linux Administration
 
 - Linux System Administration
 - Server Administration
@@ -189,9 +308,12 @@ It is not a publicly trusted CA-issued certificate and should not be described a
 - systemd
 - Service Management
 - UFW Firewall
+- Linux Log Management
+- Resource Monitoring
+- Bash Scripting
 - Basic Troubleshooting
 
-### Web Server Administration
+## Web Server Administration
 
 - Nginx Installation
 - Nginx Service Management
@@ -201,8 +323,10 @@ It is not a publicly trusted CA-issued certificate and should not be described a
 - HTTP-to-HTTPS Redirection
 - Web Server Testing
 - Access Log Monitoring
+- Nginx Log Management
+- Log Rotation
 
-### Security & Networking
+## Security & Networking
 
 - OpenSSL
 - SSL/TLS Certificate Generation
@@ -212,13 +336,27 @@ It is not a publicly trusted CA-issued certificate and should not be described a
 - Firewall Configuration
 - Basic Web Server Security Hardening
 
-### Version Control
+## Monitoring & Log Management
+
+- logrotate
+- Log Rotation
+- Log Retention
+- Log Compression
+- Bash-Based RAM Monitoring
+- Threshold-Based Monitoring
+- Resource Monitoring
+- Configuration Validation
+- Linux Log Management
+
+## Version Control
 
 - Git
 - GitHub
 - Configuration Version Tracking
 
-## 🔮 Future Improvements
+---
+
+# 🔮 Future Improvements
 
 The project is still under development. Future phases may include:
 
@@ -229,21 +367,35 @@ The project is still under development. Future phases may include:
 - Rate Limiting
 - SSH Hardening
 - Prometheus and Grafana Monitoring
+- Scheduled Monitoring using Cron or systemd timers
 - Automated Monitoring Alerts
-- Custom Log Rotation
+- Advanced Log Rotation Policies
+- CPU and Disk Usage Monitoring
+- Email or external alert integration
 - Automatic Security Updates
 - Backup and Recovery of Nginx Configuration
 - Additional Linux Server Administration tasks
 
-## 📌 Project Status
+---
+
+# 📌 Project Status
 
 Status: In Progress
 
-This project is currently under development. Additional Linux system administration, Nginx configuration, security, monitoring, and deployment features will be implemented in future stages.
+Phase 1: Web Server Deployment — Completed
 
-## 👨‍💻 Author
+Phase 2: HTTPS/TLS Configuration — Completed
+
+Phase 3: Log Management & RAM Monitoring — Completed
+
+The project is currently under development. Additional Linux system administration, Nginx configuration, security, monitoring, and deployment features will be implemented in future stages.
+
+---
+
+# 👨‍💻 Author
 
 Arun Vishwakarma
 
 GitHub:
+
 https://github.com/arunvishwakarma1307-wq
