@@ -297,6 +297,108 @@ The monitoring script currently runs through manual invocation. Continuous or sc
 
 ---
 
+# 🌐 Phase 4 — Multi-Tenant Virtual Hosting & Server Blocks Architecture
+
+Phase 4 focused on configuring Nginx name-based virtual hosting so multiple independent local websites could run on a single Nginx server using separate server blocks and isolated web roots.
+
+## 1. Site A Server Block
+
+Created the Nginx server block configuration:
+
+    /etc/nginx/sites-available/siteA
+
+Configured Site A with:
+
+    server_name sitea.local;
+    root /var/www/siteA/html;
+
+The server block listens on HTTP port 80 and serves the Site A website from its independent document root.
+
+## 2. Site B Server Block
+
+Created the Nginx server block configuration:
+
+    /etc/nginx/sites-available/siteB
+
+Configured Site B with:
+
+    server_name siteb.local;
+    root /var/www/siteB/html;
+
+The server block listens on HTTP port 80 and serves the Site B website from its independent document root.
+
+## 3. Independent Web Roots
+
+Created separate web directories for both local sites:
+
+    sudo mkdir -p /var/www/siteA/html /var/www/siteB/html
+
+Configured ownership for the web directories using the current Linux user.
+
+Distinct responsive HTML5 homepages were deployed for Site A and Site B.
+
+This provides separate website content while using the same Nginx server instance.
+
+## 4. Nginx Site Enablement
+
+Enabled both server block configurations through the Nginx `sites-enabled` directory using symbolic links.
+
+The previous default site symlink was removed so the new Site A and Site B server blocks could handle the local hostnames.
+
+## 5. Nginx Configuration Validation
+
+Validated the Nginx configuration before restarting the service:
+
+    sudo nginx -t
+
+The configuration test completed successfully. Nginx was then restarted using:
+
+    sudo systemctl restart nginx
+
+## 6. Host-Based Routing Verification
+
+Tested Nginx server-block routing by sending custom HTTP Host headers:
+
+    curl -H "Host: sitea.local" http://localhost
+
+    curl -H "Host: siteb.local" http://localhost
+
+The first request returned the Site A homepage and the second request returned the Site B homepage.
+
+## 7. Local Hostname Resolution
+
+Added local hostname mappings to `/etc/hosts`:
+
+    127.0.0.1 sitea.local
+    127.0.0.1 siteb.local
+
+Verified hostname resolution using:
+
+    getent hosts sitea.local
+    getent hosts siteb.local
+
+Direct hostname requests were then verified using:
+
+    curl http://sitea.local
+    curl http://siteb.local
+
+Both hostnames successfully resolved to the local system and returned their corresponding websites.
+
+## 8. Configuration Backup
+
+Project copies of the active Site A and Site B Nginx configurations are maintained as:
+
+    nginx_siteA.conf
+    nginx_siteB.conf
+
+These files are stored in the project repository for configuration version tracking.
+
+### Phase 4 Note
+
+Phase 4 currently provides HTTP-based local virtual hosting for `sitea.local` and `siteb.local`. The earlier Phase 2 HTTPS configuration for the default `localhost` server is not currently active after the default site was disabled; HTTPS has not yet been integrated into the Site A and Site B virtual-host architecture.
+
+---
+
 # 📚 Skills Practiced
 
 ## Linux Administration
@@ -387,6 +489,8 @@ Phase 1: Web Server Deployment — Completed
 Phase 2: HTTPS/TLS Configuration — Completed
 
 Phase 3: Log Management & RAM Monitoring — Completed
+
+Phase 4: Multi-Tenant Virtual Hosting & Server Blocks Architecture — Completed
 
 The project is currently under development. Additional Linux system administration, Nginx configuration, security, monitoring, and deployment features will be implemented in future stages.
 
