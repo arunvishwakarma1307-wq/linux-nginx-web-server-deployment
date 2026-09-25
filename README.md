@@ -399,6 +399,91 @@ Phase 4 currently provides HTTP-based local virtual hosting for `sitea.local` an
 
 ---
 
+# 🔄 Phase 5 — Nginx Reverse Proxy & HTTP Security Hardening
+
+Phase 5 focused on configuring Nginx as a reverse proxy for `sitea.local` and adding HTTP security response headers.
+
+## 1. Reverse Proxy Configuration
+
+Updated the Nginx Site A server block:
+
+    /etc/nginx/sites-available/siteA
+
+Configured Nginx to forward incoming requests for `sitea.local` to the internal application endpoint:
+
+    http://127.0.0.1:8080
+
+The reverse proxy configuration includes the following forwarded request headers:
+
+- Host
+- X-Real-IP
+- X-Forwarded-For
+- X-Forwarded-Proto
+
+## 2. HTTP Security Headers
+
+Added the following HTTP response security headers:
+
+- X-Frame-Options: SAMEORIGIN
+- X-XSS-Protection: 1; mode=block
+- X-Content-Type-Options: nosniff
+- Referrer-Policy: no-referrer-when-downgrade
+
+These configured headers were verified in the live HTTP response.
+
+## 3. Nginx Configuration Validation
+
+Validated the Nginx configuration using:
+
+    sudo nginx -t
+
+The configuration test completed successfully with:
+
+    syntax is ok
+    test is successful
+
+Restarted the Nginx service:
+
+    sudo systemctl restart nginx
+
+## 4. Reverse Proxy Verification
+
+Tested the Site A reverse proxy using:
+
+    curl -I -H "Host: sitea.local" http://localhost
+
+The request returned:
+
+    HTTP/1.1 502 Bad Gateway
+
+The response also included the configured HTTP security headers.
+
+The `502 Bad Gateway` response occurred because the configured upstream application endpoint at:
+
+    http://127.0.0.1:8080
+
+did not have an active backend service listening on port 8080 during verification.
+
+The Nginx error log confirmed the upstream connection failure:
+
+    connect() failed (111: Connection refused) while connecting to upstream
+
+This confirmed that Nginx received the request and attempted to connect to the configured upstream backend.
+
+## 5. Configuration Backup
+
+A project copy of the Phase 5 Site A reverse proxy configuration is maintained as:
+
+    nginx_proxy_siteA.conf
+
+The configuration was committed and pushed to the GitHub repository.
+
+### Phase 5 Note
+
+The reverse proxy configuration is currently configured for the internal endpoint `127.0.0.1:8080`. A backend application has not yet been configured on port 8080, so the current verification returns `502 Bad Gateway` while the proxy and configured response headers remain active.
+
+---
+
 # 📚 Skills Practiced
 
 ## Linux Administration
@@ -420,6 +505,10 @@ Phase 4 currently provides HTTP-based local virtual hosting for `sitea.local` an
 - Nginx Installation
 - Nginx Service Management
 - Nginx Virtual Host Configuration
+- Nginx Server Blocks
+- Name-Based Virtual Hosting
+- Virtual Hosting
+- Reverse Proxy Configuration
 - HTTP Configuration
 - HTTPS Configuration
 - HTTP-to-HTTPS Redirection
@@ -436,6 +525,7 @@ Phase 4 currently provides HTTP-based local virtual hosting for `sitea.local` an
 - HTTPS
 - Port 80 / Port 443
 - Firewall Configuration
+- HTTP Security Headers
 - Basic Web Server Security Hardening
 
 ## Monitoring & Log Management
@@ -463,9 +553,6 @@ Phase 4 currently provides HTTP-based local virtual hosting for `sitea.local` an
 The project is still under development. Future phases may include:
 
 - CA-issued HTTPS certificate for a real domain
-- Nginx Server Blocks for multiple websites
-- Reverse Proxy Configuration
-- Security Headers
 - Rate Limiting
 - SSH Hardening
 - Prometheus and Grafana Monitoring
@@ -476,6 +563,7 @@ The project is still under development. Future phases may include:
 - Email or external alert integration
 - Automatic Security Updates
 - Backup and Recovery of Nginx Configuration
+- Backend Application Deployment for Reverse Proxy
 - Additional Linux Server Administration tasks
 
 ---
@@ -491,6 +579,8 @@ Phase 2: HTTPS/TLS Configuration — Completed
 Phase 3: Log Management & RAM Monitoring — Completed
 
 Phase 4: Multi-Tenant Virtual Hosting & Server Blocks Architecture — Completed
+
+Phase 5: Nginx Reverse Proxy & HTTP Security Hardening — Completed
 
 The project is currently under development. Additional Linux system administration, Nginx configuration, security, monitoring, and deployment features will be implemented in future stages.
 
