@@ -484,6 +484,124 @@ The reverse proxy configuration is currently configured for the internal endpoin
 
 ---
 
+# ⚖️ Phase 6 — Multi-Node Upstream Load Balancing
+
+Phase 6 focused on configuring Nginx to distribute requests for `sitea.local` across two local backend instances using an upstream server pool.
+
+## 1. Backend Node 1
+
+Created a dedicated backend web root:
+
+    /var/www/node1/html
+
+Deployed an independent HTML5 homepage representing Backend Node 1.
+
+Node 1 was configured to listen on the local backend port:
+
+    127.0.0.1:8081
+
+## 2. Backend Node 2
+
+Created a dedicated backend web root:
+
+    /var/www/node2/html
+
+Deployed an independent HTML5 homepage representing Backend Node 2.
+
+Node 2 was configured to listen on the local backend port:
+
+    127.0.0.1:8082
+
+Both backend listeners were restricted to localhost so they are not directly exposed on external interfaces.
+
+## 3. Nginx Upstream Load Balancer
+
+Configured the Nginx upstream server pool:
+
+    upstream backend_cluster {
+        server 127.0.0.1:8081;
+        server 127.0.0.1:8082;
+    }
+
+The main `sitea.local` server block forwards incoming requests to the upstream pool using:
+
+    proxy_pass http://backend_cluster;
+
+The configuration also preserves the proxy request headers used in the previous reverse proxy phase.
+
+## 4. Nginx Configuration Validation
+
+Validated the updated Nginx configuration using:
+
+    sudo nginx -t
+
+The configuration test completed successfully with:
+
+    syntax is ok
+    test is successful
+
+Restarted the Nginx service:
+
+    sudo systemctl restart nginx
+
+## 5. Backend Node Verification
+
+Verified both backend instances directly:
+
+    curl http://127.0.0.1:8081
+
+    curl http://127.0.0.1:8082
+
+The first request returned the Backend Node 1 homepage and the second request returned the Backend Node 2 homepage.
+
+## 6. Load Balancing Verification
+
+Tested repeated requests through the main Nginx load-balancing endpoint:
+
+    for i in {1..20}; do curl -s --http1.0 -H "Host: sitea.local" http://127.0.0.1/ | grep -o "BACKEND NODE [12]"; sleep 0.5; done
+
+During the 20-request verification:
+
+    BACKEND NODE 1 = 13 requests
+    BACKEND NODE 2 = 7 requests
+
+Both backend instances received traffic through the Nginx upstream pool.
+
+The test verified request distribution across the configured backend instances. The result is not documented as a strict alternating 1-2-1-2 sequence because the observed 20-request sample was 13 requests to Node 1 and 7 requests to Node 2.
+
+## 7. Security Header Verification
+
+Verified the Phase 5 HTTP security headers through the Phase 6 load-balancer endpoint:
+
+    curl -I --http1.0 -H "Host: sitea.local" http://127.0.0.1/
+
+The request returned:
+
+    HTTP/1.1 200 OK
+
+The following security headers were present in the live response:
+
+    X-Frame-Options: SAMEORIGIN
+    X-XSS-Protection: 1; mode=block
+    X-Content-Type-Options: nosniff
+    Referrer-Policy: no-referrer-when-downgrade
+
+This confirmed that the Phase 5 security headers remained active after the Phase 6 load-balancing configuration.
+
+## 8. Configuration Backup
+
+A project copy of the Phase 6 load-balancer configuration is maintained as:
+
+    nginx_loadbalancer_siteA.conf
+
+The configuration is stored in the project repository for configuration version tracking.
+
+### Phase 6 Note
+
+Phase 6 uses two local backend instances on the same Ubuntu/WSL host at ports 8081 and 8082. They are not separate physical or virtual machines. Nginx acts as the frontend reverse proxy and upstream load balancer for these local backend instances.
+
+---
+
 # 📚 Skills Practiced
 
 ## Linux Administration
@@ -509,6 +627,8 @@ The reverse proxy configuration is currently configured for the internal endpoin
 - Name-Based Virtual Hosting
 - Virtual Hosting
 - Reverse Proxy Configuration
+- Nginx Upstream Load Balancing
+- Backend Request Routing
 - HTTP Configuration
 - HTTPS Configuration
 - HTTP-to-HTTPS Redirection
@@ -564,6 +684,7 @@ The project is still under development. Future phases may include:
 - Automatic Security Updates
 - Backup and Recovery of Nginx Configuration
 - Backend Application Deployment for Reverse Proxy
+- Health Checks and Failover Testing
 - Additional Linux Server Administration tasks
 
 ---
@@ -581,6 +702,8 @@ Phase 3: Log Management & RAM Monitoring — Completed
 Phase 4: Multi-Tenant Virtual Hosting & Server Blocks Architecture — Completed
 
 Phase 5: Nginx Reverse Proxy & HTTP Security Hardening — Completed
+
+Phase 6: Multi-Node Upstream Load Balancing — Completed
 
 The project is currently under development. Additional Linux system administration, Nginx configuration, security, monitoring, and deployment features will be implemented in future stages.
 
