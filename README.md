@@ -1,14 +1,14 @@
 # Linux Nginx Web Server Deployment & Administration
 
-A hands-on Linux System Administration project built using Ubuntu Linux (WSL) and Nginx. The project demonstrates web server installation, service management, firewall configuration, custom web page deployment, HTTP verification, HTTPS/TLS configuration, Nginx log management, log rotation, Bash-based RAM monitoring, and Git/GitHub version control.
+A hands-on Linux System Administration project built using Ubuntu Linux (WSL) and Nginx. The project demonstrates web server installation, service management, firewall configuration, custom web page deployment, HTTP verification, HTTPS/TLS configuration, Nginx log management, log rotation, Bash-based RAM monitoring, reverse proxy configuration, upstream load balancing, HTTP security hardening, custom error handling, and Git/GitHub version control.
 
 ## 📌 Project Overview
 
-The goal of this project is to build and administer a Linux-based Nginx web server and progressively improve its configuration, security, monitoring, and log management capabilities.
+The goal of this project is to build and administer a Linux-based Nginx web server and progressively improve its configuration, security, monitoring, networking, proxying, load balancing, and error-handling capabilities.
 
 Project workflow:
 
-Ubuntu Linux → Install Nginx → Manage Nginx Service → Configure UFW Firewall → Deploy Custom HTML Page → Test HTTP → Monitor Access Logs → Configure HTTPS/TLS → Enforce HTTP-to-HTTPS Redirect → Configure Log Rotation → Monitor RAM Usage → Track System Status
+Ubuntu Linux → Install Nginx → Manage Nginx Service → Configure UFW Firewall → Deploy Custom HTML Page → Test HTTP → Monitor Access Logs → Configure HTTPS/TLS → Enforce HTTP-to-HTTPS Redirect → Configure Log Rotation → Monitor RAM Usage → Configure Virtual Hosting → Reverse Proxy → HTTP Security Headers → Upstream Load Balancing → Custom Error Routing → Track System Status
 
 ## 🛠️ Technologies & Tools
 
@@ -602,6 +602,146 @@ Phase 6 uses two local backend instances on the same Ubuntu/WSL host at ports 80
 
 ---
 
+# 🛡️ Phase 7 — Custom Error Routing & Proxy Performance Tuning
+
+Phase 7 focused on improving the Nginx reverse-proxy layer with custom upstream error handling, proxy buffering and timeout configuration, while preserving the Phase 5 security headers and Phase 6 local backend architecture.
+
+## 1. Custom 50x Error Page
+
+Created a custom Nginx error page at:
+
+    /usr/share/nginx/html/custom_50x.html
+
+The page provides a custom cluster alert interface for upstream/server-side error conditions.
+
+## 2. Custom Error Routing
+
+Configured Nginx to route the following errors to the custom page:
+
+    error_page 500 502 503 504 /custom_50x.html;
+
+Enabled upstream error interception inside the proxy location:
+
+    proxy_intercept_errors on;
+
+Configured the custom error page location as internal:
+
+    location = /custom_50x.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+
+Direct client access to:
+
+    /custom_50x.html
+
+was tested and returned:
+
+    HTTP/1.1 404 Not Found
+
+This verified that the custom error page is protected by the `internal` directive and is intended to be reached through Nginx internal error handling.
+
+## 3. Proxy Buffer and Timeout Configuration
+
+Configured proxy buffering parameters:
+
+    proxy_buffers 16 16k;
+    proxy_buffer_size 32k;
+
+Configured proxy timeouts:
+
+    proxy_read_timeout 60s;
+    proxy_connect_timeout 60s;
+
+These parameters provide explicit proxy response buffering and connection/read timeout configuration.
+
+## 4. Nginx Configuration Validation
+
+Validated the Phase 7 configuration using:
+
+    sudo nginx -t
+
+The configuration test completed successfully with:
+
+    syntax is ok
+    test is successful
+
+Restarted Nginx:
+
+    sudo systemctl restart nginx
+
+Verified the service state using:
+
+    sudo systemctl status nginx --no-pager
+
+The Nginx service was verified as:
+
+    Active: active (running)
+
+## 5. Healthy Cluster Verification
+
+After the Phase 7 configuration was loaded, tested normal traffic using:
+
+    curl -i --http1.0 -H "Host: sitea.local" http://127.0.0.1/
+
+The request returned:
+
+    HTTP/1.1 200 OK
+
+The Phase 5 HTTP security headers were also present in the response:
+
+    X-Frame-Options: SAMEORIGIN
+    X-XSS-Protection: 1; mode=block
+    X-Content-Type-Options: nosniff
+    Referrer-Policy: no-referrer-when-downgrade
+
+This verified that normal backend traffic continued to work after Phase 7 configuration changes.
+
+## 6. Custom Error Page Runtime Verification
+
+A controlled test was performed by temporarily directing the upstream pool to unused local ports while keeping the backend listener configuration intact.
+
+After validating and restarting Nginx, the request:
+
+    curl -i --http1.0 -H "Host: sitea.local" http://127.0.0.1/
+
+returned:
+
+    HTTP/1.1 502 Bad Gateway
+
+The response body contained the custom error page with:
+
+    🚨 CLUSTER ALERT
+
+This verified that an upstream 502 response was intercepted and routed to the configured custom error page.
+
+The original working Phase 7 configuration was then restored, validated using `nginx -t`, and Nginx was restarted successfully.
+
+## 7. Final Backend Listener Verification
+
+The final configuration preserves the local backend listeners:
+
+    127.0.0.1:8081
+    127.0.0.1:8082
+
+The backend services remained available after restoration, and normal traffic again returned:
+
+    HTTP/1.1 200 OK
+
+## 8. Configuration Backup
+
+A project copy of the final Phase 7 configuration is maintained as:
+
+    nginx_final_architecture.conf
+
+The configuration is stored in the project repository for version tracking and backup.
+
+### Phase 7 Note
+
+Phase 7 verifies custom error handling, proxy buffering, timeout configuration and protected internal error-page routing. It does not by itself prove production-grade high availability, zero downtime, or automated backend failover. Dedicated health-check and failover testing remains a future improvement.
+
+---
+
 # 📚 Skills Practiced
 
 ## Linux Administration
@@ -629,6 +769,9 @@ Phase 6 uses two local backend instances on the same Ubuntu/WSL host at ports 80
 - Reverse Proxy Configuration
 - Nginx Upstream Load Balancing
 - Backend Request Routing
+- Custom Error Page Routing
+- Proxy Buffer Configuration
+- Proxy Timeout Configuration
 - HTTP Configuration
 - HTTPS Configuration
 - HTTP-to-HTTPS Redirection
@@ -646,6 +789,7 @@ Phase 6 uses two local backend instances on the same Ubuntu/WSL host at ports 80
 - Port 80 / Port 443
 - Firewall Configuration
 - HTTP Security Headers
+- Internal Nginx Locations
 - Basic Web Server Security Hardening
 
 ## Monitoring & Log Management
@@ -705,7 +849,9 @@ Phase 5: Nginx Reverse Proxy & HTTP Security Hardening — Completed
 
 Phase 6: Multi-Node Upstream Load Balancing — Completed
 
-The project is currently under development. Additional Linux system administration, Nginx configuration, security, monitoring, and deployment features will be implemented in future stages.
+Phase 7: Custom Error Routing & Proxy Performance Tuning — Completed
+
+The project is currently under development. Additional Linux system administration, Nginx configuration, security, monitoring, networking, and deployment features will be implemented in future stages.
 
 ---
 
