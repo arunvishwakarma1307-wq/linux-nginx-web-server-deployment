@@ -472,15 +472,22 @@ This confirmed that Nginx received the request and attempted to connect to the c
 
 ## 5. Configuration Backup
 
-A project copy of the Phase 5 Site A reverse proxy configuration is maintained as:
+A separate file named `nginx_proxy_siteA.conf` is not present in the current repository.
 
-    nginx_proxy_siteA.conf
+The repository contains later configuration snapshots:
 
-The configuration was committed and pushed to the GitHub repository.
+- `nginx_loadbalancer_siteA.conf` — Phase 6 configuration with the upstream backend cluster and HTTP security headers.
+- `nginx_final_architecture.conf` — consolidated Phase 7 configuration with load balancing, proxy buffering and timeouts, HTTP security headers, and custom error routing.
+
+These are later configuration snapshots; they are not a separate Phase 5-only backup.
 
 ### Phase 5 Note
 
-The reverse proxy configuration is currently configured for the internal endpoint `127.0.0.1:8080`. A backend application has not yet been configured on port 8080, so the current verification returns `502 Bad Gateway` while the proxy and configured response headers remain active.
+During Phase 5 testing, the Site A reverse proxy targeted `http://127.0.0.1:8080`. No backend service was listening on that port, so the test returned `502 Bad Gateway`. The response included the configured HTTP security headers.
+
+In Phase 6, the configuration was superseded by the `backend_cluster` upstream with local backend listeners at `127.0.0.1:8081` and `127.0.0.1:8082`. Subsequent load-balancing tests returned `200 OK` and confirmed that requests reached both backend nodes.
+
+This section records the historical Phase 5 test. The active Site A configuration currently matches `nginx_final_architecture.conf`, which uses the `backend_cluster` upstream on ports 8081 and 8082.
 
 ---
 
